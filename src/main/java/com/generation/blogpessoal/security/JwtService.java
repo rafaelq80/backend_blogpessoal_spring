@@ -17,19 +17,22 @@ import io.jsonwebtoken.security.Keys;
 @Component
 public class JwtService {
 
-    private static final String SECRET = "5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437";
-    private static final Duration EXPIRATION_DURATION = Duration.ofMinutes(60);
+    private String secret = "5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437";
+    private Duration expiration = Duration.ofMinutes(60);
     
-    private final SecretKey signingKey;
-    
-    public JwtService() {
-        byte[] keyBytes = Decoders.BASE64.decode(SECRET);
-        this.signingKey = Keys.hmacShaKeyFor(keyBytes);
+    private SecretKey signingKey;
+        
+    private SecretKey getSigningKey() {
+        if (signingKey == null) {
+            byte[] keyBytes = Decoders.BASE64.decode(secret);
+            signingKey = Keys.hmacShaKeyFor(keyBytes);
+        }
+        return signingKey;
     }
     
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
-            .verifyWith(signingKey)
+            .verifyWith(getSigningKey())
             .build()
             .parseSignedClaims(token)
             .getPayload();
@@ -54,9 +57,10 @@ public class JwtService {
         return Jwts.builder()
             .subject(username)
             .issuedAt(Date.from(now))
-            .expiration(Date.from(now.plus(EXPIRATION_DURATION)))
-            .signWith(signingKey)
+            .expiration(Date.from(now.plus(expiration)))
+            .signWith(getSigningKey())
             .compact();
     }
     
 }
+
